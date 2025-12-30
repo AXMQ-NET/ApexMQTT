@@ -24,8 +24,6 @@ sysctl -w net.ipv4.tcp_max_syn_backlog=65535
 echo "[3/3] TCP 缓冲区与端口相关（与复现指南保持一致）"
 sysctl -w net.core.wmem_max=16777216
 sysctl -w net.core.rmem_max=16777216
-sysctl -w net.core.wmem_default=4096
-sysctl -w net.core.rmem_default=4096
 sysctl -w net.ipv4.tcp_wmem="4096 4096 16777216"
 sysctl -w net.ipv4.tcp_rmem="4096 4096 16777216"
 sysctl -w net.ipv4.tcp_tw_reuse=1
