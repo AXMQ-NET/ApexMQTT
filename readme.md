@@ -1,15 +1,18 @@
 # AXMQ (ApexMQTT) | 鼎极
 
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Academic--Research-red.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
 [![Official Website](https://img.shields.io/badge/Official-axmq.net-blue.svg)](http://axmq.net)
+[![Technical Whitepaper](https://img.shields.io/badge/Whitepaper-AXMQ--Flash-blue.svg)](https://github.com/AXMQ-NET/AXMQ-Flash/blob/main/AXMQ-Whitepaper.md)
 
 **AXMQ (ApexMQTT / 鼎极)** 是一款面向百万级设备接入、千万级消息分发而生的极致高性能 MQTT 代理（Broker）。基于 Go 语言构建，通过对底层网络栈、内存分配和并发模型的深度重构，AXMQ 成功突破了单机性能的物理天花板。
 
+**[📄 技术白皮书 (Technical Whitepaper)](https://github.com/AXMQ-NET/AXMQ-Flash/blob/main/AXMQ-Whitepaper.md)** - 详细的架构设计、性能测试和实验数据
+
 ## 🚀 核心优势 (Top-Tier Performance)
 
-- **单机百万连接 (Million Connections):** 在单机环境下稳定支撑 100 万个活跃长连接，稳态内存占用仅约 4.4GB。
-- **千万级分发 (High Throughput):** 消息分发吞吐量高达 **260 万条/秒 (QoS 0)**，出站带宽峰值可达 5.81 Gbps。
+- **单机百万连接 (Million Connections):** 在单机环境下稳定支撑 100 万个活跃长连接，**稳态内存占用仅约 1.63GB**，内存曲线稳如直线。
+- **千万级分发 (High Throughput):** 消息分发吞吐量高达 **250 万条/秒 (QoS 0)**，TPS 直接起飞；**出站带宽峰值可达 5.81 Gbps**，网卡满载。
 - **零拷贝路径 (Zero-Copy):** 基于 `writev` 向量化 I/O，实现从入口到出口的全路径零拷贝消息分发。
 - **多核异步 I/O (Multi-Core Sharded I/O):** 自研 `pollio` 引擎，采用无竞争分片架构，彻底消除高并发下的锁竞争与协程调度开销。
 - **分级 Slab 内存池 (Slab MemPool):** 绕过 Go 原生堆管理，通过自研 Slab 内存池将堆对象数量降低 90% 以上，极大缓解 GC 压力。
@@ -20,7 +23,7 @@
 从 GitHub Releases 页面下载对应平台的二进制文件（`ApexMQTT_amd64_linux`）以及默认配置文件 `conf.yml`。
 
 ### 2. 准备配置
-确保二进制文件与 `conf.yml` 处于同一目录下。你可以根据需要修改 `conf.yml` 中的端口和内存限制。
+确保二进制文件与 `conf.yml` 处于同一目录下。你可以根据需要修改 `conf.yml` 中的端口和存储路径。
 
 ### 3. 启动程序
 由于 AXMQ 会在启动时自动尝试优化 Linux 内核网络参数（如句柄数、缓冲区大小等），建议以 **root** 权限运行：
@@ -31,10 +34,9 @@ sudo ./ApexMQTT_amd64_linux
 
 ## ⚙️ 配置说明 (Configuration)
 
-编辑 `conf.yml` 文件以适配您的服务器环境：
+编辑 `conf.yml` 文件以适配您的服务器环境（注意：AXMQ 现在会自动探测系统内存并进行自适应调优，无需手动配置内存限制）：
 
 - `dashboard_pass`: Web 管理后台登录密码。留空则程序启动时随机生成 8 位密码。
-- `max_memory_gb`: 服务器可分配给 AXMQ 的最大内存（GB）。程序会据此自动配置内存保护阈值。
 - `storage_path`: 消息持久化（QoS 1/2 离线消息）的存储路径，一般保持默认即可。
 - `host`: MQTT TCP 服务监听地址（默认 `:1883`）。
 - `websocket_host`: WebSocket 服务监听地址（默认 `:8083`）。
@@ -55,8 +57,8 @@ AXMQ 内置了 Web 管理后台，无需额外安装即可使用。
 ### 3. 功能概览
 - **状态概览 (Overview)**: 实时可视化监控 Broker 的运行状态、连接数、消息速率及内存分布。
 - **连接管理 (Clients)**: 实时列出所有在线客户端信息，支持查看 IP 地址并手动强制断开（Kick Out）。
-- **策略引擎 (Policies)**: 动态配置认证策略（支持 JWT、Basic Auth等支持规则引擎），实现毫秒级策略下发。
-- **保留消息 (Retained)**: 集中展示系统中当前存储的所有保留消息，支持按主题检索与清理。
+- **策略引擎 (Policies)**: 动态配置认证策略（支持 JWT、Basic Auth、白名单等），实现毫秒级策略下发。
+- **保留消息 (Retained)**: 集中展示系统中当前存储的所有保留消息，支持按主题检索与一键清理。
 - **安全拦截 (Blocker)**: 监控并管理被 `IpBlocker` 自动封禁的恶意 IP，支持手动封禁或解封。
 - **动态配置 (Config)**: 实时调整最大包大小、封禁时长等系统核心参数，无需重启即可生效。
 
@@ -78,7 +80,22 @@ AXMQ 严格遵循 MQTT 3.1.1 协议规范，并针对大规模 IOT 场景进行�
 - **用法:** 使用 `$share/{group}/{topic}` 格式订阅。
 - **示例:** 两个客户端同时订阅 `$share/g1/sensor/data`，发送到 `sensor/data` 的消息将以轮询方式在两者之间分发。
 
-### 2. 系统统计主题 ($SYS Topics)
+### 2. 遗嘱消息 (Last Will and Testament)
+客户端异常断开时，AXMQ 会自动发布预设的遗嘱消息。
+- **用法:** 在 `CONNECT` 报文中设置 `Will Topic` 和 `Will Message`。
+- **特性:** 支持 `Will Retain`，确保设备下线状态可被后续订阅者获取。
+
+### 3. 保留消息 (Retained Messages)
+AXMQ 支持基于通配符的保留消息检索。
+- **用法:** 发布时设置 `Retain` 标志位。
+- **特性:** 当客户端订阅 `a/#` 时，所有匹配该通配符的保留消息将一次性全量下发。
+
+### 4. 离线消息与持久会话 (Persistent Session)
+当 `CleanSession=0` 时，AXMQ 为客户端保留会话状态。
+- **功能:** 客户端离线期间的 QoS 1/2 消息将持久化到磁盘，并在客户端重新上线后按序补发。
+- **握手持久化:** QoS 2 的四阶段握手支持跨连接恢复，确保消息不丢不重。
+
+### 5. 系统统计主题 ($SYS Topics)
 AXMQ 提供符合行业惯例的系统统计主题，用于实时监控 Broker 的运行状态。
 - **特性:** 采用 `Retain` 机制，客户端订阅后可立即获取统计快照。
 - **核心主题:**
@@ -90,7 +107,11 @@ AXMQ 提供符合行业惯例的系统统计主题，用于实时监控 Broker �
   - `$SYS/broker/messages/sent`: 累计发送的消息总数。
   - `$SYS/broker/subscriptions/count`: 当前活跃订阅总数。
 
-### 3. 其他
+### 6. 协议校验与安全
+- **非法过滤器拦截:** AXMQ 严格校验通配符位置，自动拒绝 `a/#/c` 或 `a/b#` 等非标订阅。
+- **系统主题隔离:** 默认通配符 `#` 或 `+` 无法匹配 `$SYS/` 开头的内部主题，保护系统隐私。
+
+### 7. 其他
 - **其他未特别说明部分:** 完全遵守MQTT3.1.1协议规范功能完备。
 - **功能完备性测试用例:** 提供功能完备性单元测试用例,测试指令如下。
 ```bash
@@ -108,20 +129,49 @@ go test -v mqtt_functional_test.go mqtt_raw_helpers_test.go
 
 | 测试维度 | 性能指标 (Metrics) | 测得峰值 (Peak Performance) | 备注                   |
 | :--- | :--- |:------------------------|:---------------------|
-| **分发性能** | QoS 0 消息吞吐 | **2,600,000+ msg/s**    | 多核异步 I/O 引擎          |
+| **分发性能** | QoS 0 消息吞吐 | **2,500,000+ msg/s**    | 多核异步 I/O 引擎          |
 | | QoS 1 消息吞吐 | **480,000+ msg/s**      | 开启磁盘持久化与状态同步         |
 | | QoS 2 消息吞吐 | **155,000+ msg/s**      | 严格遵循四阶段握手流程          |
 | **带宽能力** | 网络出站带宽 | **5.81 Gbps**           | 阿里云内网带宽峰值分发          |
 | | 应用层分发速率 | **2.2 GB/s**            | 全链路零拷贝内存路径           |
-| **内存管理** | 1,000,000 连接内存 | **~4.4 GB**             | 均摊 4.4KB/连接 (极简设计)   |
+| **内存管理** | 1,000,000 连接内存 | **~1.63 GB**            | 均摊 1.71KB/连接 (极简设计)   |
 | | 内存曲线 | **极度平稳**                | 自研 Slab Pool 绕过原生 GC |
 
-## 压力测试过程，敬请期待《AXMQ (ApexMQTT / 鼎极)白皮书》
+## 📖 技术白皮书与实验复现
+
+详细的性能测试过程、A/B 对照实验数据和架构深度分析请参考：
+
+**[📄 AXMQ 技术白皮书 (Technical Whitepaper)](https://github.com/AXMQ-NET/AXMQ-Flash/blob/main/AXMQ-Whitepaper.md)**
+
+**[🔬 实验复现指南 (Reproducibility Guide)](https://github.com/AXMQ-NET/AXMQ-Flash/blob/main/readme.md)**
+
+所有测试脚本、数据收集工具和实验环境配置已开源，可在阿里云 ECS 环境中完全复现。
+
+## 📄 许可证 (License)
+
+**重要声明：** AXMQ 采用学术和研究用途许可证 (Academic and Research License)，**严格禁止商业使用**。
+
+### 允许用途
+- ✅ 个人学习和研究
+- ✅ 学术研究和教学
+- ✅ 非营利组织使用
+- ✅ 教育机构使用
+
+### 禁止用途
+- ❌ 商业产品开发
+- ❌ 商业服务提供
+- ❌ 任何形式的商业盈利
+- ❌ 商业环境部署
+
+### 商业授权
+如需商业使用，请联系作者获取商业授权许可。
+
+**许可证详情：** [LICENSE](LICENSE)
 
 ## 🌐 官方资源
 
 - **官网:** [axmq.net](http://axmq.net)
-- **联系我们:** 黎东海 (Email: 229292620@qq.com)
+- **联系我们:** (Email: 229292620@qq.com)
 
 ---
 
