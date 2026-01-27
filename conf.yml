@@ -1,0 +1,22 @@
+# AXMQ (ApexMQTT) 鼎极 配置文件
+# web密码
+dashboard_pass: ""
+# 数据持久化存储路径
+storage_path: "./data"
+# tcp服务端口号
+host: ":1883"
+# tcp的tls服务pem证书路径
+# 例：/etc/aaa.pem
+tcp_tls_pem: ""
+# tcp的tls服务key证书路径
+# 例：/etc/aaa.key
+tcp_tls_key: ""
+# websocket服务端口号
+websocket_host: ":8083"
+# websocket的tls服务pem证书路径
+# 例：/etc/aaa.pem
+websocket_tls_pem: ""
+# websocket的tls服务key证书路径
+# 例：/etc/aaa.key
+websocket_tls_key: ""
+
